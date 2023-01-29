@@ -9,6 +9,9 @@ function main() {
     const game = new AlphabetGame({displayerSvg: displayerSvg, synth: synth});
     game.setLevel();
     document.addEventListener("keydown", event => {
+        // E.g. kids press on random keys like Tab to break out of the game accidentally.
+        event.preventDefault();
+
         if (synth.speaking) {
             return;
         }

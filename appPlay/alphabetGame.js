@@ -15,12 +15,12 @@ export class AlphabetGame {
         const isLetter = key.match(/^[a-z]$/i);
         const isNumber = key.match(/^[0-9]$/i);
         if (!isLetter && !isNumber) {
-            if (this.numWrongKeys % 3 !== 0) {
+            this.numWrongKeys++;
+            if (this.numWrongKeys % 3 !== 1) {
                 return;
             }
             const content = 'Please press on a letter or a number.';
             speakSentence(new Sentence({content: content}));
-            this.numWrongKeys++;
             return;
         }
         renderSvg(this.displayerSvg, key.toUpperCase());
