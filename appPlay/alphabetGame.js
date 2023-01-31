@@ -1,6 +1,7 @@
-import { getDialogueTemplates } from "./level.js";
+import { generateDefaultSentences, templateToSentences } from "./diaglogue.js";
+import { getKeyToTemplate } from "./template.js";
 import { Sentence } from "./sentence.js";
-import { getRandomEnVoices, speakSentence } from "./speechSynth.js";
+import { speakSentence } from "./speechSynth.js";
 
 export class AlphabetGame {
     constructor({level = 0, displayerSvg = null, synth = null}) {
@@ -9,6 +10,8 @@ export class AlphabetGame {
         this.synth = synth;
         this.numWrongKeys = 0;
         this.numRounds = 0;
+        this.keyToTemplate = new Map();
+        this.prevLetterTemplate = null;
     }
 
     respond(key) {
@@ -16,23 +19,33 @@ export class AlphabetGame {
         const isNumber = key.match(/^[0-9]$/i);
         if (!isLetter && !isNumber) {
             this.numWrongKeys++;
-            if (this.numWrongKeys % 3 !== 1) {
-                return;
+            let content = 'Please press on a letter or a number.';
+            if (this.numWrongKeys > 1) {
+                content = 'You are not pressing on a letter or a number.'
             }
-            const content = 'Please press on a letter or a number.';
-            speakSentence(new Sentence({content: content}));
+            speakSentence(new Sentence({content: content, speechRate: 0.9}));
             return;
         }
-        renderSvg(this.displayerSvg, key.toUpperCase());
-        const sentences = generateDialogueLevelA(key, this.numRounds % 3 === 0);
+        let sentences;
+        if (this.keyToTemplate.has(key)) {
+            sentences = templateToSentences(this.keyToTemplate.get(key), this.prevLetterTemplate);
+            if (isLetter) {
+                this.prevLetterTemplate = this.keyToTemplate.get(key);
+            }
+        } else {
+            sentences = generateDefaultSentences(key, this.numRounds % 5 === 0);
+        }
         sentences.forEach(sentence => {
             speakSentence(sentence);
         });
+        renderSvg(this.displayerSvg, key.toUpperCase());
         this.numRounds++;
     }
 
-    setLevel() {
-        getDialogueTemplates();
+    async setLevel(level) {
+        this.level = level;
+        this.keyToTemplate = await getKeyToTemplate(level);
+        this.prevLetterTemplate = this.keyToTemplate.get('a');
     }
 }
 
@@ -49,21 +62,3 @@ function renderSvg(svg, key) {
     svg.appendChild(text);
 }
 
-function generateDialogueLevelA(key, sayQuestion) {
-    const isLetter = key.match(/^[a-z]$/i);
-    const isNumber = key.match(/^[0-9]$/i);
-    let keyPhrase = '';
-    if (isLetter) {
-        keyPhrase = `letter: ${key.toUpperCase()}`;
-    }
-    if (isNumber) {
-        keyPhrase = `number: ${key}`;
-    }
-    const sentences = [];
-    const [voice1, voice2] = getRandomEnVoices(2);
-    if (sayQuestion) {
-        sentences.push(new Sentence({content: `What key did you press?`, voice: voice1}))
-    }
-    sentences.push(new Sentence({content: `I pressed on the ${keyPhrase}`, voice: voice2, speechRate: 0.8}));
-    return sentences;
-}
