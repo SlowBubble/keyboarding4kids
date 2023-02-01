@@ -2,6 +2,7 @@ import { generateDefaultSentences, templateToSentences } from "./diaglogue.js";
 import { getKeyToTemplate } from "./template.js";
 import { Sentence } from "./sentence.js";
 import { speakSentence } from "./speechSynth.js";
+import { templateToSvgElts } from "./image.js";
 
 export class AlphabetGame {
     constructor({level = 0, displayerSvg = null, synth = null}) {
@@ -26,19 +27,27 @@ export class AlphabetGame {
             speakSentence(new Sentence({content: content, speechRate: 0.9}));
             return;
         }
+        const numberOrNull = isNumber ? parseInt(key) : null;
         let sentences;
+        let svgElts;
         if (this.keyToTemplate.has(key)) {
-            sentences = templateToSentences(this.keyToTemplate.get(key), this.prevLetterTemplate);
+            const currTemplate = this.keyToTemplate.get(key);
+            sentences = templateToSentences(currTemplate, this.prevLetterTemplate);
             if (isLetter) {
                 this.prevLetterTemplate = this.keyToTemplate.get(key);
             }
+            svgElts = templateToSvgElts(numberOrNull, currTemplate, this.prevLetterTemplate);
         } else {
             sentences = generateDefaultSentences(key, this.numRounds % 5 === 0);
         }
         sentences.forEach(sentence => {
             speakSentence(sentence);
         });
-        renderSvg(this.displayerSvg, key.toUpperCase());
+        if (svgElts) {
+            renderSvg(this.displayerSvg, svgElts);
+        } else {
+            renderDefaultSvg(this.displayerSvg, key.toUpperCase());
+        }
         this.numRounds++;
     }
 
@@ -49,7 +58,16 @@ export class AlphabetGame {
     }
 }
 
-function renderSvg(svg, key) {
+function renderSvg(svg, svgElts) {
+    svg.innerHTML = '';
+    svgElts.forEach(elt => {
+        console.log('hi')
+        svg.appendChild(elt);
+    });
+
+}
+
+function renderDefaultSvg(svg, key) {
     svg.innerHTML = '';
 
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");

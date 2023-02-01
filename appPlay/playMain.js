@@ -8,7 +8,9 @@ function main() {
     const header = document.getElementById('instruction-header');
     const synth = window.speechSynthesis;
     const game = new AlphabetGame({displayerSvg: displayerSvg, synth: synth});
-    game.setLevel(getRandomInt(Object.keys(levelToAssetUrl).length + 1));
+    const urlParams = new URLSearchParams(window.location.search);
+    const level = parseInt(urlParams.get('level') || 1);
+    game.setLevel(level);
     document.addEventListener("keydown", event => {
         if (event.metaKey) {
             return;
@@ -24,8 +26,3 @@ function main() {
         game.respond(event.key);
     });
 }
-
-function getRandomInt(max) {
-    return Math.floor(Math.random() * max);
-}
-  
